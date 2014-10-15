@@ -9,7 +9,7 @@ colik.a <- function(a,b){
   singlelikelihoods = dnorm(y, mean = pred, sd=1,log=T)
   aprior = dnorm(a, 0, 1000,log=T)
   bprior = dnorm(b, 0, 1000,log=T)
-  prodll = sum(singlelikelihoods,aprior,bprior)
+  Sumll = sum(singlelikelihoods,aprior,bprior)
   return(prodll)   
 }
 
