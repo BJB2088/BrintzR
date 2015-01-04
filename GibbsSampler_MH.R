@@ -10,7 +10,7 @@ colik.a <- function(a,b){
   aprior = dnorm(a, 0, 1000,log=T)
   bprior = dnorm(b, 0, 1000,log=T)
   Sumll = sum(singlelikelihoods,aprior,bprior)
-  return(prodll)   
+  return(Sumll)   
 }
 
 # C=1/(integrate(Vectorize(coblikelihood),lower=-Inf,upper=Inf,b=2)$value)
@@ -23,9 +23,7 @@ run_metropolis_MCMC <- function(startvalue, iterations){
   chain[1,] = startvalue
   for (i in 1:iterations){
     proposal = proposalfunction(chain[i,])
-    
     probab = exp(colik.a(proposal[1],proposal[2])-colik.a(chain[i,1],chain[i,2]))
-    
     if (runif(1) < probab){
       chain[i+1,] = proposal
     }else{
@@ -43,8 +41,9 @@ gibbsfn = function(a.start,b.start,its){ #a.start only used in first M-H
   #lista[1]=run_metropolis_MCMC(c(a.start,b.start),5000)[5000,1]
   #listb[1]=run_metropolis_MCMC(c(lista[1],b.start),5000)[5000,2]
   for (i in 1:its){
-    lista[i+1]=run_metropolis_MCMC(c(lista[i],listb[i]),5000)[5000,1]
-    listb[i+1]=run_metropolis_MCMC(c(lista[i+1],listb[i]),5000)[5000,2]
+    lista[i+1]=run_metropolis_MCMC(c(lista[i],listb[i]),2500)[2500,1]
+    listb[i+1]=run_metropolis_MCMC(c(lista[i+1],listb[i]),25000)[2500,2]
+    print(i)
   }
   return(cbind(lista,listb))
 }
