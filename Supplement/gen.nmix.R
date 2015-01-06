@@ -1,13 +1,35 @@
-head(birds)
-head(dcast(birds,RouteDataID+countrynum+statenum+Route+RPID+AOU~year))
-mallard.data # used for closure test
+birds=read.csv("birds.csv",header=TRUE)
+birds=t(birds)[8:57,]
+expit = function(x) { return((exp(x))/(1+exp(x))) }
+logit = function(x) { return(log(x/(1-x))) }
+R=50
+T=6
+X.const = rep(1,R)
+#X.lam = cbind(X.const,elev,forest)
+Z.const = rep(1,R*T)# used for closure test
 ## gen.nmix.R
+Method = "BFGS"
+K.lim = 40
+n.it=birds
+model.null = optim(c(1,1,1), nmix.mig, method=Method, hessian=TRUE, n=n.it,
+                   X=X.const, Z=Z.const, migration="none", prior="poisson", K=K.lim)
 
-# contains "nmix.mig", "ests", and "Mallard.data"
-# nmix.mig is a function that returns the negative log likelihood for the generalized model
-# ests is a function to return estimates of total abundance during each primary period
-# Mallard.data is a point count data set originally published by Kery, Royle, Schmid (2005) 
+ev.null = eigen(model.null$hessian)$values
+cn.null = max(ev.null)/min(ev.null)
+cn.null #the condition number
+lambda.est = exp(model.null$par[1])
+p.est = expit(model.null$par[2])
+c(lambda.est, p.est)
 
+
+
+
+model.open = optim(c(0,0,0), nmix.mig, 
+                   method=Method, hessian=TRUE, n=n.it, X=X.const, Z=Z.const, migration="constant", 
+                   prior="poisson", K=K.lim)
+lambda.est = exp(model.open$par[1])
+p.est = expit(model.open$par[2])
+c(lambda.est, p.est)
 
 nmix.mig = function(vars,n,X,Z,migration="none",prior="poisson",Date=matrix(rep(1:length(n[1,]),length(n[,1])),nrow=length(n[,1]),ncol=length(n[1,]),byrow=TRUE), K=200) {
  # function returns the negative log likelihood of the generalized N-mixture model. 
