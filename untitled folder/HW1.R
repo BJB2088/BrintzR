@@ -25,3 +25,16 @@ results$expected=rep(2.6,25)
 results$chisqcontr=((results$obs-results$expected)^2)/results$expected
 pchisq(sum(results$chisqcontr),24,lower.tail=FALSE)
 # p-value is .8519242, no evidence to reject this is homogenous spatial poisson process
+
+
+?ks.test
+jap=as.data.frame(japanese)
+colnames(jap)=c("x","y")
+jap$numb=1:65
+arb=sample(1:65,1)
+plot(jap,type="n")
+plot(jap$x,jap$y,type="n")
+text(jap$x,jap$y)
+
+
+
