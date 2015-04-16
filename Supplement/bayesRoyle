@@ -1,0 +1,45 @@
+install.packages('coda')
+install.packages('lattice')
+install.packages('R2jags')
+install.packages('rjags')
+library(coda)
+library(lattice)
+library(rjags)
+library(R2jags)
+
+n.it=t(birds)[8:57,]
+
+
+
+model.3 <- function(){
+  for(i in 1:R){
+    for (m in 1:V){
+      y[i,m] ~ dbin(alpha.p, alpha.N)
+  }}
+
+  alpha.p ~ dunif(0,1)
+  alpha.N  ~ dpois(lambda)
+  lambda ~ dgamma(1.0E-6,1.0E-6)
+  
+
+  
+}
+
+# --------------------
+# 3. fit the model
+# --------------------
+
+
+# Initial values
+
+#zst <- array(1,dim=c(Y,R))
+#ust <- array(1,dim=c(S,Y,R))
+
+
+inits <- function(){list(alpha.p = runif(1, 0, 1), alpha.N = 5,lambda=3)}
+params <- c("alpha.p", "alpha.N", "lambda")
+test.data <- list(y = n.it, R = 50, V = 6)
+system.time(out3 <- jags(test.data, inits, params, model.3, n.chains = 3,
+                         n.thin = 20, n.iter = 5000, n.burnin = 100))
+print(out3, 2)
+traceplot(out3)
