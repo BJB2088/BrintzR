@@ -1,0 +1,111 @@
+head(birds)
+n.it=t(birds)[8:57,]
+X.const=rep(1,50)
+Z.const=rep(1,300)
+
+expit = function(x) { return((exp(x))/(1+exp(x))) }
+logit = function(x) { return(log(x/(1-x))) }
+Method = "BFGS"
+K.lim = 40
+
+################
+# Line 4
+################
+model.null = optim(c(0,0), nmix.mig, method=Method, hessian=TRUE, n=n.it,
+                   X=X.const, Z=Z.const, migration="none", prior="poisson",K=40)
+model.null$conv
+ev.null = eigen(model.null$hessian)$values
+cn.null = max(ev.null)/min(ev.null)
+cn.null #the condition number
+
+lambda.est = exp(model.null$par[1])
+p.est = expit(model.null$par[2])
+c(lambda.est, p.est)
+
+se = sqrt(diag(solve(model.null$hess)))
+se #the standard errors
+
+nll = model.null$val
+
+With this, the AIC score for the null model can be calculated:
+  
+aic.null = nll + 2*length(model.null$par)
+
+ests.closed = ests(model.null$par,model.null$hess, migration="none", n=n.it,
+                   X=X.const, Z=Z.const)
+ests.closed
+################
+#Line 1
+################
+model.2 = optim(c(model.null$par[1],model.null$par[2],0,0), nmix.mig, method=Method, hessian=TRUE, n=n.it,
+                   X=X.const, Z=Z.const, migration="constant", prior="poisson",K=40)
+model.2$conv
+ev.2 = eigen(model.2$hessian)$values
+cn.2 = max(ev.2)/min(ev.2)
+cn.2 #the condition number
+
+ests.2 = ests(model.2$par,model.2$hess, migration="constant", n=n.it,
+                   X=X.const, Z=Z.const)
+ests.2
+
+nll = model.2$val
+
+With this, the AIC score for the null model can be calculated:
+  
+  aic.2 = nll + 2*length(model.2$par)
+################
+#Line 5
+################
+model.3 = optim(c(0,0,0,0,0), nmix.mig, method=Method, hessian=TRUE, n=n.it,
+                X=X.const, Z=Z.const, migration="constant", prior="NB",K=40)
+model.3$conv
+ev.3 = eigen(model.3$hessian)$values
+cn.3 = max(ev.3)/min(ev.3)
+cn.3 #the condition number
+
+ests.3 = ests(model.3$par,model.3$hess, migration="constant", n=n.it,
+              X=X.const, Z=Z.const)
+ests.3
+nll = model.3$val
+
+With this, the AIC score for the null model can be calculated:
+  
+  aic.null3 = nll + 2*length(model.3$par)
+
+################
+#Line 3
+################
+Date=matrix(rep(2003:2008,50),nrow=50,ncol=6,byrow=TRUE)
+p.Date=as.vector(t(Date))
+Z.p = cbind(Z.const,factor(p.Date))
+
+
+model.4 = optim(c(model.null$par[1],model.null$par[2],0), nmix.mig, method=Method, hessian=TRUE, n=n.it,
+                X=X.const, Z=Z.p, migration="none", prior="poisson",K=40)
+model.4$conv
+ev.4 = eigen(model.4$hessian)$values
+cn.4 = max(ev.4)/min(ev.4)
+cn.4 #the condition number
+
+ests.4 = ests(model.4$par,model.4$hess, migration="none", n=n.it,
+              X=X.const, Z=Z.p)
+ests.4
+
+nll = model.4$val
+
+With this, the AIC score for the null model can be calculated:
+  
+  aic.4 = nll + 2*length(model.4$par)
+
+################
+# Line 2
+################
+model.5=optim(c(model.4$par[1],model.4$par[2],model.4$par[3],0,0), nmix.mig, method=Method, hessian=TRUE, n=n.it,
+      X=X.const, Z=Z.p, migration="constant", prior="poisson",K=40)
+model.5$conv
+ev.5 = eigen(model.5$hessian)$values
+cn.5 = max(ev.5)/min(ev.5)
+cn.5 #the condition number
+ests.5 = ests(model.5$par,model.5$hess, migration="constant", n=n.it,
+              X=X.const, Z=Z.p)
+ests.5
