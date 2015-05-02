@@ -1,57 +1,45 @@
 birds=read.csv("birds.csv",header=TRUE)
 head(birds)
 n.it=t(birds)[8:57,]
-X.const=rep(1,50)
-Z.const=rep(1,300)
-dim(birds)
-data=n.it
-R=50
-T=6
-#Tests
-p=.5
-lam=5
-R=dim(data)[1] # sites
-T=dim(data)[2] # visits
-nmixlik=function(params){
-  #################### Create my likelihoods ####################
-  Bin.mat = matrix(dbinom(vec,rep(params[1:50],T),params[51],log=TRUE),nrow=R,ncol=T)
-  p.prior=dunif(params[51],0,1,log=TRUE)
-  N.pois.prior = dpois(params[1:50],params[52],log=TRUE)
-  lam.gam.prior = dgamma(params[52],shape=1.5,scale=100,log=TRUE)
-  lik=sum(as.vector(Bin.mat),p.prior,N.pois.prior,lam.gam.prior)
-  return(lik)
+start=c(as.vector(apply(n.it,1,max)),.5,3)
+posterior <- function(param){
+  N = rep(param[1:50],6)
+  p = param[51]
+  lam = param[52]  
+  singlelikelihoods = dbinom(as.vector(n.it), N, p, log = T)
+  
+  Nprior=dpois(params[1:50],params[52],log=TRUE)
+  pprior=dunif(params[51],0,1,log=TRUE)
+  lamprior=dgamma(params[52],shape=1.5,scale=100,log=TRUE)
+  
+  sumll = sum(singlelikelihoods+Nprior+pprior+lamprior)
+  return(sumll)   
 }
-# Gibbs
-nmixbayes= function(p.in,lam.in,n.reps){
-  nparams = 52
-  for(j in 1:n.reps){
-  for (i in 1:nparams){
-    # of params = 52 Ni's and p and lam
-    N.in = as.vector(apply(n.it, 1, max)) # Initial values for N.i
-    Nrep=as.vector(rep(apply(n.it, 1, max),6)) # Put in binom matrix format
-    vec=as.vector(data)
-    p.in=runif(1,0,1)
-    lam.in=pgamma(1,shape=1,scale=100)
-    upd=matrix(c(N.in,p.in,lam.in,rep(0,52*n.reps)),nrow=52,ncol=n.reps+1)
+mx=apply(n.it,1,max)
+proposalfunction <- function(param){
+  dif=rpois(50,param[1:50])
+  p1=mx+ifelse(mx<dif,rpois(50,dif-mx),0)
+  p2=runif(1,0,2*param[51])
+  p3=rnorm(1,param[52],1)
+  return(c(p1,p2,p3))
+}
+
+run <- function(startvalue, iterations){
+  chain = array(dim = c(iterations+1,52))
+  chain[1,] = startvalue
+  for (i in 1:iterations){
+    proposal = proposalfunction(chain[i,])
     
-      upd[i,j]=
-      params=upd[,j]
-    nmixlik(upd[,j])
+    probab = exp(posterior(proposal) - posterior(chain[i,]))
+    if (runif(1) < probab){
+      chain[i+1,] = proposal
+    }else{
+      chain[i+1,] = chain[i,]
+    }
   }
-}}
+  return(chain)
+}
 
-
-
-fn=function(x,y) return(exp(-1/2*x^2)*y)
-
-
-
-1/(sum(fn(seq(-100,100))))
-1/sqrt(2*pi)
-
-
-hist(rgamma(10000,shape=2,scale=100))
-rgamma(1,shape=1,scale=100)
 
 
 
