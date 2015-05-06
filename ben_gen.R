@@ -14,24 +14,20 @@ posterior <- function(param){
   singlelikelihoods = dbinom(as.vector(t(n.it)), N, p,log=T)
   Nprior=dpois(param[1:50],param[52],log=T)
   pprior=dunif(param[51],0,1,log=T)
-  lamprior=dgamma(param[52],shape=1.5,scale=100,log=T)
+  lamprior=dgamma(param[52],shape=1,scale=100,log=T)
   sumll = sum(singlelikelihoods,Nprior,pprior,lamprior)
   return(sumll)
 }
-
 proposalfunction <- function(param){
   mx=apply(n.it,1,max)
   dif=round(rnorm(50,param[1:50]))
   p1=apply(cbind(mx,dif),1,max)
   pval=rnorm(1,param[51],.2)
-  
   p2= if(pval>1){1} else if(pval<0){0} else{pval}
   lval=rnorm(1,param[52],1)
   p3=ifelse(lval<0,0,lval)
-  
   return(c(p1,p2,p3))
 }
-
 run <- function(startvalue, iterations){
   chain = array(dim = c(iterations+1,52))
   chain[1,] = startvalue
@@ -39,9 +35,8 @@ run <- function(startvalue, iterations){
   for (i in 1:iterations){
     proposal = proposalfunction(chain[i,])
     probab = exp(posterior(proposal) - posterior(chain[i,]))
-    
     if (runif(1) < probab){
-      count=count+1
+      count=count+1 # acceptance rate is really low 
       print(count)
       chain[i+1,] = proposal
     }else{
@@ -49,8 +44,8 @@ run <- function(startvalue, iterations){
     }
   }
   return(chain)
-  
 }
-
 out=run(start,500)
 out[500,]
+
+qplot(1:10000,dgamma(1:10000,shape=1.05,scale=100),geom="line") + geom_point(aes(x=2,y=dgamma(2,shape=1.05,scale=100)))
