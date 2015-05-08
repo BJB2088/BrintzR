@@ -1,10 +1,29 @@
+# Simulating Data
+# Royle's Model 
 x=rpois(50,3)
 sum(x)
 mat=matrix(rep(x,6),nrow=50,ncol=6)
 n=matrix(rbinom(300,x,.3),nrow=50,ncol=6)
+
+# Migration 
+x=rpois(50,3)
+# Initial Matrix
+mat=matrix(rep(x,6),nrow=50,ncol=6)
+v=dim(mat)[2]
+omega = .8
+gamma = .2
+# Survive and Gain
+nmat=mat
+for (i in 2:v){
+  nmat[,i]=rbinom(50,mat[,i-1],omega) + rpois(50,gamma*mat[,i-1])
+}
+n=matrix(rbinom(300,as.vector(t(nmat)),.5),nrow=50,ncol=6,byrow=T)
+#######
+
+# Birds data 
 birds=read.csv("birds.csv",header=TRUE)
 head(birds)
-#n.it=t(birds)[8:57,]
+n.it=t(birds)[8:57,]
 n.it=n
 start=c(as.vector(apply(n.it,1,max)),.8,1)
 
