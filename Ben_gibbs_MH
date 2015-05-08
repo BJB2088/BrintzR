@@ -2,8 +2,8 @@
 # Royle's Model
 x=rpois(50,3)
 sum(x)
-mat=matrix(rep(x,6),nrow=50,ncol=6)
-n=matrix(rbinom(300,x,.3),nrow=50,ncol=6)
+mat=matrix(rep(x,10),nrow=50,ncol=10)
+n=matrix(rbinom(500,x,.5),nrow=50,ncol=10)
 
 # Migration Model
 x=rpois(50,3)
@@ -24,12 +24,14 @@ n=matrix(rbinom(300,as.vector(t(nmat)),.5),nrow=50,ncol=6,byrow=T)
 birds=read.csv("birds.csv",header=TRUE)
 head(birds)
 n.it=t(birds)[8:57,]
+#######
+# Initial Values
 n.it=n
 R=dim(n.it)[1]
 S=dim(n.it)[2]
-
-#####
 start=c(as.vector(apply(n.it,1,max)),.8,1)
+#####
+
 posterior <- function(param){
   N = rep(param[1:R],each=S)
   p = param[R+1]
@@ -76,10 +78,10 @@ gibbs <- function(startvalue,iterations){
   }
   return(chain)
 }
-out=gibbs(start,100)
+out=gibbs(start,500)
 qplot(200:1000,out[200:1000,52],geom="line")
-apply(out[500:1000,],2,mean)
+apply(out[200:500,],2,mean) 
 apply(out[500:1000,],2,quantile,c(.025,.975))
-sum(apply(out[500:1000,],2,mean)[1:50])
+sum(apply(out[200:500,],2,mean)[1:50])
 out[500:1000,1]
 qplot(1:10000,dgamma(1:10000,shape=1,scale=100),geom="line") + geom_point(aes(x=2,y=dgamma(2,shape=1,scale=100)))
