@@ -4,7 +4,6 @@ x=rpois(50,3)
 sum(x)
 mat=matrix(rep(x,10),nrow=50,ncol=10)
 n=matrix(rbinom(500,x,.5),nrow=50,ncol=10)
-
 # Migration Model
 x=rpois(50,3)
 # Initial Matrix
@@ -18,7 +17,6 @@ for (i in 2:v){
   nmat[,i]=rbinom(50,mat[,i-1],omega) + rpois(50,gamma*mat[,i-1])
 }
 n=matrix(rbinom(300,as.vector(t(nmat)),.5),nrow=50,ncol=6,byrow=T)
-
 #######
 # Birds data
 birds=read.csv("birds.csv",header=TRUE)
@@ -31,15 +29,14 @@ R=dim(n.it)[1]
 S=dim(n.it)[2]
 start=c(as.vector(apply(n.it,1,max)),.8,1)
 #####
-
 posterior <- function(param){
   N = rep(param[1:R],each=S)
   p = param[R+1]
   lam = param[R+2]
   singlelikelihoods = dbinom(as.vector(t(n.it)), N, p,log=T)
-  Nprior=dpois(param[1:R],param[R+2],log=T)
-  pprior=dunif(param[R+1],0,1,log=T)
-  lamprior=dgamma(param[R+2],shape=1,scale=100,log=T)
+  Nprior=dpois(param[1:R],lam,log=T)
+  pprior=dunif(p,0,1,log=T)
+  lamprior=dgamma(lam,shape=1,scale=100,log=T)
   sumll = sum(singlelikelihoods,Nprior,pprior,lamprior)
   return(sumll)
 }
@@ -53,14 +50,13 @@ proposalfunction <- function(param){
   p3=ifelse(lval<0,0,lval)
   return(c(p1,p2,p3))
 }
+
 run_MH <- function(startvalue,j){
   stop=0
   repeat{
     proposal = proposalfunction(startvalue)[j]
     proptest = startvalue
     proptest[j] = proposal
-    print(j)
-    print(proposal)
     probab = exp(posterior(proptest) - posterior(startvalue))
     stop=ifelse(runif(1) < probab,1,0)
     if (stop>0) break
@@ -71,6 +67,7 @@ gibbs <- function(startvalue,iterations){
   chain = array(dim = c(iterations+1,R+2))
   chain[1,] = startvalue
   for(i in 2:iterations){
+    print(i)
     chain[i,]=chain[i-1,]
     for(j in 1:R+2){ # i is # of Params
       chain[i,j]=run_MH(chain[i,],j)[j]
@@ -78,9 +75,9 @@ gibbs <- function(startvalue,iterations){
   }
   return(chain)
 }
-out=gibbs(start,500)
+out=gibbs(start,200)
 qplot(200:1000,out[200:1000,52],geom="line")
-apply(out[200:500,],2,mean) 
+apply(out[100:200,],2,mean)
 apply(out[500:1000,],2,quantile,c(.025,.975))
 sum(apply(out[200:500,],2,mean)[1:50])
 out[500:1000,1]
