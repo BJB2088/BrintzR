@@ -40,16 +40,15 @@ posterior <- function(param){
   
   Npriort1=dpois(param[seq(1,R*S,by=6)],lam,log=T)
   NMAT=matrix(param[1:(R*S)],nrow=S,ncol=R)
-  maxN=matrix(rep(0,R*(S-1),nrow=S-1,ncol=R))
+  maxN=matrix(rep(0,R*(S-1)),nrow=S-1,ncol=R)
   for(j in 1:R){
-  for(i in 2:S){
-    print(i)
-    print(j)
-    maxN[i,j]=max(NMAT[(i-1):i,j])
-    
-  }}
-    maxMat=maxN
-    Npriort2T=dbinom()*dpois()
+    for(i in 2:S){
+      print(i)
+      print(j)
+      maxN[(i-1),j]=max(NMAT[(i-1):i,j])
+      vec=0:maxN[i-1,j]
+      Npriort2T[j]=dbinom(vec,,)*dpois(maxN[i-1,j]-vec,)
+    }}
   
   pprior=dunif(p,0,1,log=T)
   lamprior=dgamma(lam,shape=1,scale=100,log=T)
@@ -100,7 +99,3 @@ apply(out[500:1000,],2,quantile,c(.025,.975))
 sum(apply(out[200:500,],2,mean)[1:50])
 out[500:1000,1]
 qplot(1:10000,dgamma(1:10000,shape=1,scale=100),geom="line") + geom_point(aes(x=2,y=dgamma(2,shape=1,scale=100)))
-
-Status API Training Shop Blog About 
-
-© 2015 GitHub, Inc. Terms Privacy Security Contact 
