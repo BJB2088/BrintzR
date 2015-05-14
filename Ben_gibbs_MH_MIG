@@ -79,9 +79,15 @@ proposalfunction <- function(param){
 run_MH <- function(startvalue,j){
   stop=0
   repeat{
-    proposal = proposalfunction(startvalue)[j]
-    proptest = startvalue
-    proptest[j] = proposal
+    if(j %in% 1:R){
+      proposal = proposalfunction(startvalue)[j:j+S-1]
+      proptest = startvalue
+      proptest[j:j+S-1] = proposal}
+    
+    else{
+      proposal = proposalfunction(startvalue)[j]
+      proptest = startvalue
+      proptest[j] = proposal}
     probab = exp(posterior(proptest) - posterior(startvalue))
     stop=ifelse(runif(1) < probab,1,0)
     if (stop>0) break
@@ -89,7 +95,7 @@ run_MH <- function(startvalue,j){
   return(proptest)
 }
 gibbs <- function(startvalue,iterations){
-  chain = array(dim = c(iterations+1,R+2))
+  chain = array(dim = c(iterations+1,(R*S)+4))
   chain[1,] = startvalue
   for(i in 2:iterations){
     print(i)
@@ -100,7 +106,7 @@ gibbs <- function(startvalue,iterations){
   }
   return(chain)
 }
-out=gibbs(start,200)
+out=gibbs(start,10)
 qplot(200:1000,out[200:1000,52],geom="line")
 apply(out[100:200,],2,mean)
 apply(out[500:1000,],2,quantile,c(.025,.975))
