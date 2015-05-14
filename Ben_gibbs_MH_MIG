@@ -27,7 +27,7 @@ n.it=t(birds)[8:57,]
 n.it=n
 R=dim(n.it)[1]
 S=dim(n.it)[2]
-start=c(rep(as.vector(apply(n.it,1,max)),each=S),.8,1,.6,.3)
+start=c(as.vector(t(n.it)),.8,1,.6,.3)
 #####
 
 
@@ -64,13 +64,13 @@ proposalfunction <- function(param){
   Nval=round(rnorm((R*S),param[1:(R*S)]))
   p1=apply(cbind(as.vector(t(n.it)),Nval),1,max)
   # Propose Other parametrs 
-  pval=rnorm(1,param[R+1],.2)
+  pval=rnorm(1,param[((R*S)+1)],.2)
   p2 = if(pval >=1){1} else if(pval<=0){0} else{pval}
-  lval=rnorm(1,param[R+2],.05)
+  lval=rnorm(1,param[((R*S)+2)],.05)
   p3=ifelse(lval<0,0,lval)
-  oval=rnorm(1,param[R+3],.2)
+  oval=rnorm(1,param[((R*S)+3)],.2)
   p4 = if(oval >=1){1} else if(oval<=0){0} else{oval}
-  gval=rnorm(1,param[R+4],.05)
+  gval=rnorm(1,param[((R*S)+4)],.05)
   p5=ifelse(gval<0,0,gval)
   #############
   return(c(p1,p2,p3,p4,p5))
@@ -88,6 +88,7 @@ run_MH <- function(startvalue,j){
       proposal = proposalfunction(startvalue)[(j-R+(R*S))]
       proptest = startvalue
       proptest[(j-R+(R*S))] = proposal}
+    print(proptest)
     probab = exp(posterior(proptest) - posterior(startvalue))
     stop=ifelse(runif(1) < probab,1,0)
     if (stop>0) break
@@ -100,7 +101,8 @@ gibbs <- function(startvalue,iterations){
   for(i in 2:iterations){
     print(i)
     chain[i,]=chain[i-1,]
-    for(j in 1:R+4){ # i is # of Params
+    for(j in 1:(R+4)){ # i is # of Params
+      print(j)
       if(j %in% 1:R){chain[i,(((j-1)*S)+1):((((j-1)*S)+1)+S-1)]=run_MH(chain[i,],j)[(((j-1)*S)+1):((((j-1)*S)+1)+S-1)]}
       else{chain[i,j]=run_MH(chain[i,],j)[(j-R+(R*S))]}
     }
