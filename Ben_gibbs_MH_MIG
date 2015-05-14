@@ -48,7 +48,7 @@ posterior <- function(param){
     for(i in 2:S){
       minN[(i-1),j]=min(NMAT[(i-1):i,j])
       vec=0:minN[i-1,j]
-      Npriort2T[i-1,j]=log(sum(dbinom(vec,NMAT[(i-1),j],omega)*dpois(NMAT[i,j]-vec,gamma*NMAT[(i-1),j])))
+      Npriort2T[i-1,j]=log(sum(dbinom(vec,NMAT[(i-1),j],omega)*dpois(NMAT[i,j]-vec,gamma)))
     }}
   pprior=dunif(p,0,1,log=T)
   lamprior=dgamma(lam,shape=1,scale=100,log=T)
