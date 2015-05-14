@@ -36,23 +36,25 @@ posterior <- function(param){
   N = param[1:(R*S)]
   p = param[(R*S)+1]
   lam = param[(R*S)+2]
+  omega = param[(R*S)+3]
+  gamma=param[(R*S)+4]
   singlelikelihoods = dbinom(as.vector(t(n.it)), N, p,log=T)
   
   Npriort1=dpois(param[seq(1,R*S,by=6)],lam,log=T)
   NMAT=matrix(param[1:(R*S)],nrow=S,ncol=R)
-  maxN=matrix(rep(0,R*(S-1)),nrow=S-1,ncol=R)
+  minN=matrix(rep(0,R*(S-1)),nrow=S-1,ncol=R)
+  Npriort2T=matrix(rep(0,R*(S-1)),nrow=S-1,ncol=R)
   for(j in 1:R){
     for(i in 2:S){
-      print(i)
-      print(j)
-      maxN[(i-1),j]=max(NMAT[(i-1):i,j])
-      vec=0:maxN[i-1,j]
-      Npriort2T[j]=dbinom(vec,,)*dpois(maxN[i-1,j]-vec,)
+      minN[(i-1),j]=min(NMAT[(i-1):i,j])
+      vec=0:minN[i-1,j]
+      Npriort2T[i-1,j]=log(sum(dbinom(vec,NMAT[(i-1),j],omega)*dpois(NMAT[i,j]-vec,gamma*NMAT[(i-1),j])))
     }}
-  
   pprior=dunif(p,0,1,log=T)
   lamprior=dgamma(lam,shape=1,scale=100,log=T)
-  sumll = sum(singlelikelihoods,Nprior,pprior,lamprior)
+  omegaprior=dunif(omega,0,1,log=T)
+  gammaprior= dgamma(gamma,shape=1,scale=100,log=T)
+  sumll = sum(singlelikelihoods,Npriort1,Npriort2T,pprior,lamprior,omegaprior,gammaprior)
   return(sumll)
 }
 
