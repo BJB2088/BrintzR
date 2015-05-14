@@ -27,7 +27,7 @@ n.it=t(birds)[8:57,]
 n.it=n
 R=dim(n.it)[1]
 S=dim(n.it)[2]
-start=c(rep(as.vector(apply(n.it,1,max)),each=S),.8,1)
+start=c(rep(as.vector(apply(n.it,1,max)),each=S),.8,1,.6,.3)
 #####
 
 
@@ -60,14 +60,20 @@ posterior <- function(param){
 
 
 proposalfunction <- function(param){
-  mx=apply(n.it,1,max)
-  Nval=round(rnorm(R,param[1:R]))
-  p1=apply(cbind(mx,Nval),1,max)
+  # Proposal N values for all sites and visits
+  Nval=round(rnorm((R*S),param[1:(R*S)]))
+  p1=apply(cbind(as.vector(t(n.it)),Nval),1,max)
+  # Propose Other parametrs 
   pval=rnorm(1,param[R+1],.2)
   p2 = if(pval >=1){1} else if(pval<=0){0} else{pval}
   lval=rnorm(1,param[R+2],.05)
   p3=ifelse(lval<0,0,lval)
-  return(c(p1,p2,p3))
+  oval=rnorm(1,param[R+3],.2)
+  p4 = if(oval >=1){1} else if(oval<=0){0} else{oval}
+  gval=rnorm(1,param[R+4],.05)
+  p5=ifelse(gval<0,0,gval)
+  #############
+  return(c(p1,p2,p3,p4,p5))
 }
 
 run_MH <- function(startvalue,j){
