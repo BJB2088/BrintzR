@@ -100,8 +100,9 @@ gibbs <- function(startvalue,iterations){
   for(i in 2:iterations){
     print(i)
     chain[i,]=chain[i-1,]
-    for(j in 1:R+2){ # i is # of Params
-      chain[i,j]=run_MH(chain[i,],j)[j]
+    for(j in 1:R+4){ # i is # of Params
+      if(j %in% 1:R){run_MH(chain[i,],j)[j:j+S-1]}
+      else{chain[i,j]=run_MH(chain[i,],j)[j]}
     }
   }
   return(chain)
