@@ -88,7 +88,6 @@ run_MH <- function(startvalue,j){
       proposal = proposalfunction(startvalue)[(j-R+(R*S))]
       proptest = startvalue
       proptest[(j-R+(R*S))] = proposal}
-    print(proptest)
     probab = exp(posterior(proptest) - posterior(startvalue))
     stop=ifelse(runif(1) < probab,1,0)
     if (stop>0) break
@@ -102,9 +101,8 @@ gibbs <- function(startvalue,iterations){
     print(i)
     chain[i,]=chain[i-1,]
     for(j in 1:(R+4)){ # i is # of Params
-      print(j)
       if(j %in% 1:R){chain[i,(((j-1)*S)+1):((((j-1)*S)+1)+S-1)]=run_MH(chain[i,],j)[(((j-1)*S)+1):((((j-1)*S)+1)+S-1)]}
-      else{chain[i,j]=run_MH(chain[i,],j)[(j-R+(R*S))]}
+      else{chain[i,(j-R+(R*S))]=run_MH(chain[i,],j)[(j-R+(R*S))]}
     }
   }
   return(chain)
