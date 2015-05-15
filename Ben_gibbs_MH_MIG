@@ -110,9 +110,8 @@ gibbs <- function(startvalue,iterations){
   return(chain)
 }
 out=gibbs(start,500)
-qplot(200:1000,out[200:1000,52],geom="line")
-apply(out[100:200,],2,mean)
-apply(out[500:1000,],2,quantile,c(.025,.975))
+qplot(100:500,out[100:500,304],geom="line")
+apply(out[300:500,],2,mean)
+apply(out[300:500,],2,quantile,c(.025,.975))
 sum(apply(out[200:500,],2,mean)[1:50])
 out[500:1000,1]
-qplot(1:10000,dgamma(1:10000,shape=1,scale=100),geom="line") + geom_point(aes(x=2,y=dgamma(2,shape=1,scale=100)))
