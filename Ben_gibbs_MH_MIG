@@ -4,19 +4,21 @@ x=rpois(50,3)
 sum(x)
 mat=matrix(rep(x,6),nrow=50,ncol=6)
 n=matrix(rbinom(300,x,.5),nrow=50,ncol=6)
+
+
 # Migration Model
 x=rpois(50,3)
 # Initial Matrix
 mat=matrix(rep(x,6),nrow=50,ncol=6)
 v=dim(mat)[2]
-omega = .8
-gamma = .2
+omega = .7
+gamma = 2
 # Survive and Gain
 nmat=mat
 for (i in 2:v){
-  nmat[,i]=rbinom(50,mat[,i-1],omega) + rpois(50,gamma*mat[,i-1])
+  nmat[,i]=rbinom(50,mat[,i-1],omega) + rpois(50,gamma) # potentially add rpois(50,gamma*mat[,i-1])
 }
-n=matrix(rbinom(300,as.vector(t(nmat)),.5),nrow=50,ncol=6,byrow=T)
+n=matrix(rbinom(300,as.vector(t(nmat)),.8),nrow=50,ncol=6,byrow=T)
 #######
 # Birds data
 birds=read.csv("birds.csv",header=TRUE)
@@ -27,7 +29,7 @@ n.it=t(birds)[8:57,]
 n.it=n
 R=dim(n.it)[1]
 S=dim(n.it)[2]
-start=c(as.vector(t(n.it)),.8,1,.6,.3)
+start=c(as.vector(t(n.it)),.5,1,.6,1)
 #####
 
 
@@ -107,7 +109,7 @@ gibbs <- function(startvalue,iterations){
   }
   return(chain)
 }
-out=gibbs(start,5)
+out=gibbs(start,500)
 qplot(200:1000,out[200:1000,52],geom="line")
 apply(out[100:200,],2,mean)
 apply(out[500:1000,],2,quantile,c(.025,.975))
