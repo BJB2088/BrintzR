@@ -1,3 +1,4 @@
+
 # Simulating Data
 # Royle's Model
 x=rpois(50,3)
@@ -30,6 +31,10 @@ n.it=n
 R=dim(n.it)[1]
 S=dim(n.it)[2]
 start=c(as.vector(t(n.it)),.5,1,.6,1)
+fn=function(y){0:y}
+a <- 1:(R*S)
+b <- a[-seq(S, length(a), 6)]
+c <- a[-seq(1, length(a), 6)]
 #####
 
 
@@ -44,14 +49,13 @@ posterior <- function(param){
   
   Npriort1=dpois(param[seq(1,R*S,by=6)],lam,log=T)
   NMAT=matrix(param[1:(R*S)],nrow=S,ncol=R)
-  minN=matrix(rep(0,R*(S-1)),nrow=S-1,ncol=R)
-  Npriort2T=matrix(rep(0,R*(S-1)),nrow=S-1,ncol=R)
-  for(j in 1:R){
-    for(i in 2:S){
-      minN[(i-1),j]=min(NMAT[(i-1):i,j])
-      vec=0:minN[i-1,j]
-      Npriort2T[i-1,j]=log(sum(dbinom(vec,NMAT[(i-1),j],omega)*dpois(NMAT[i,j]-vec,gamma)))
-    }}
+  NMAT2=rep(as.vector(NMAT),each=2)
+  minl=apply(matrix(NMAT2[2:599],ncol=2,nrow=299,byrow=TRUE),1,min)
+  dat=mapply(fn,minl[b],SIMPLIFY=FALSE)
+  max.len <- max(sapply(dat, length))
+  corrected.list <- lapply(dat, function(x) {c(x, rep(NA, max.len - length(x)))})
+  mat <- do.call(rbind, corrected.list)
+  Npriort2T=log(apply((dbinom(mat,as.vector(NMAT)[b],omega)*dpois(as.vector(NMAT)[c]-mat,gamma)),1,sum,na.rm=T))
   pprior=dunif(p,0,1,log=T)
   lamprior=dgamma(lam,shape=1,scale=100,log=T)
   omegaprior=dunif(omega,0,1,log=T)
@@ -109,6 +113,8 @@ gibbs <- function(startvalue,iterations){
   }
   return(chain)
 }
+
+
 out=gibbs(start,200)
 qplot(100:500,out[100:500,304],geom="line")
 apply(out[300:500,],2,mean)
