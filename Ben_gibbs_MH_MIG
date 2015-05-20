@@ -1,5 +1,5 @@
 library(msm)
-library(truncdist)
+library(mc2d)
 # Simulating Data
 # Royle's Model
 x=rpois(50,3)
