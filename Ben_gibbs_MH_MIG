@@ -68,13 +68,17 @@ posterior <- function(param){
 
 proposalfunction <- function(param){
   # Proposal N values for all sites and visits
-  p1=rtrunc(distr=rpois, n=(R*S), linf=as.vector(t(n.it))-1,lambda=param[1:(R*S)])
+ 
+  
   # Propose Other parametrs 
   p2 = rtnorm(1,param[((R*S)+1)],.2,lower=0,upper=1)
   p3=rtnorm(1,param[((R*S)+2)],.05,lower=0)
   p4 = rtnorm(1,param[((R*S)+3)],.2,lower=0,upper=1)
   p5=rtnorm(1,param[((R*S)+4)],.05,lower=0)
   #############
+  ind=which(param[1:(R*S)]==0)
+  param[ind]=.5
+  p1=rtrunc(distr=rpois, n=(R*S), linf=as.vector(t(n.it))-1,lambda=param[1:(R*S)])
   return(c(p1,p2,p3,p4,p5))
 }
 
@@ -111,7 +115,7 @@ gibbs <- function(startvalue,iterations){
 }
 
 
-out=gibbs(start,200)
+out=gibbs(start,2)
 qplot(100:500,out[100:500,304],geom="line")
 apply(out[300:500,],2,mean)
 apply(out[300:500,],2,quantile,c(.025,.975))
