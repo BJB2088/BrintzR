@@ -1,4 +1,5 @@
-
+library(msm)
+library(truncdist)
 # Simulating Data
 # Royle's Model
 x=rpois(50,3)
@@ -117,26 +118,3 @@ apply(out[300:500,],2,quantile,c(.025,.975))
 sum(apply(out[200:500,],2,mean)[1:50])
 out[500:1000,1]
 
-# fast
-NMAT2=rep(as.vector(NMAT),each=2)
-x=proc.time()
-minl=apply(matrix(NMAT2[2:599],ncol=2,nrow=299,byrow=TRUE),1,min)
-fn=function(y){0:y}
-dat=mapply(fn,minl[b],SIMPLIFY=FALSE)
-max.len <- max(sapply(dat, length))
-corrected.list <- lapply(dat, function(x) {c(x, rep(NA, max.len - length(x)))})
-mat <- do.call(rbind, corrected.list)
-log(prod(apply((dbinom(mat,as.vector(NMAT)[b],omega)*dpois(as.vector(NMAT)[c]-mat,gamma)),1,sum,na.rm=T)))
-y=proc.time()
-for(j in 1:R){
-  for(i in 2:S){
-    minN[(i-1),j]=min(NMAT[(i-1):i,j])
-    vec=0:minN[i-1,j]
-    Npriort2T[i-1,j]=log(sum(dbinom(vec,NMAT[(i-1),j],omega)*dpois(NMAT[i,j]-vec,gamma)))
-  }}
-sum(Npriort2T)
-z=proc.time()
-length(as.vector(NMAT)[c])
-a <- 1:(R*S)
-b <- a[-seq(S, length(a), 6)]
-c <- a[-seq(1, length(a), 6)]
