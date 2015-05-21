@@ -68,7 +68,7 @@ posterior <- function(param){
 
 proposalfunction <- function(param){
   # Proposal N values for all sites and visits
- 
+  p1=round(rtnorm(n=(R*S),param[1:(R*S)],sd=.5,lower=as.vector(t(n.it))))
   
   # Propose Other parametrs 
   p2 = rtnorm(1,param[((R*S)+1)],.2,lower=0,upper=1)
@@ -76,9 +76,10 @@ proposalfunction <- function(param){
   p4 = rtnorm(1,param[((R*S)+3)],.2,lower=0,upper=1)
   p5=rtnorm(1,param[((R*S)+4)],.05,lower=0)
   #############
-  ind=which(param[1:(R*S)]==0)
-  param[ind]=.5
-  p1=rtrunc(distr=rpois, n=(R*S), linf=as.vector(t(n.it))-1,lambda=param[1:(R*S)])
+  #ind=which(param[1:(R*S)]==0)
+  #param[ind]=.5
+  #p1=rtrunc(distr=rpois, n=(R*S), linf=as.vector(t(n.it))-1,lambda=param[1:(R*S)])
+  
   return(c(p1,p2,p3,p4,p5))
 }
 
