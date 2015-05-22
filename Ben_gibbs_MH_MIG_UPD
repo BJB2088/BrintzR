@@ -1,0 +1,127 @@
+library(msm)
+library(mc2d)
+# Simulating Data
+# Royle's Model
+x=rpois(50,3)
+sum(x)
+mat=matrix(rep(x,6),nrow=50,ncol=6)
+n=matrix(rbinom(300,x,.5),nrow=50,ncol=6)
+
+
+# Migration Model
+x=rpois(50,3)
+# Initial Matrix
+mat=matrix(rep(x,6),nrow=50,ncol=6)
+v=dim(mat)[2]
+omega = .95
+gamma = 1
+# Survive and Gain
+nmat=mat
+for (i in 2:v){
+  nmat[,i]=rbinom(50,mat[,i-1],omega) + rpois(50,gamma) # potentially add rpois(50,gamma*mat[,i-1])
+}
+n=matrix(rbinom(300,as.vector(t(nmat)),.8),nrow=50,ncol=6,byrow=T)
+#######
+# Birds data
+birds=read.csv("birds.csv",header=TRUE)
+head(birds)
+n.it=t(birds)[8:57,]
+#######
+# Initial Values
+n.it=n
+R=dim(n.it)[1]
+S=dim(n.it)[2]
+start=c(as.vector(t(n.it)),.5,1,.6,1)
+fn=function(y){0:y}
+a <- 1:(R*S)
+b <- a[-seq(S, length(a), 6)]
+c <- a[-seq(1, length(a), 6)]
+#####
+
+
+
+posterior <- function(param){
+  N = param[1:(R*S)]
+  p = param[(R*S)+1]
+  lam = param[(R*S)+2]
+  omega = param[(R*S)+3]
+  gamma=param[(R*S)+4]
+  singlelikelihoods = dbinom(as.vector(t(n.it)), N, p,log=T)
+  
+  Npriort1=dpois(param[seq(1,R*S,by=6)],lam,log=T)
+  NMAT=matrix(param[1:(R*S)],nrow=S,ncol=R)
+  NMAT2=rep(as.vector(NMAT),each=2)
+  minl=apply(matrix(NMAT2[2:599],ncol=2,nrow=299,byrow=TRUE),1,min)
+  dat=mapply(fn,minl[b],SIMPLIFY=FALSE)
+  max.len <- max(sapply(dat, length))
+  corrected.list <- lapply(dat, function(x) {c(x, rep(NA, max.len - length(x)))})
+  mat <- do.call(rbind, corrected.list)
+  Npriort2T=log(apply((dbinom(mat,as.vector(NMAT)[b],omega)*dpois(as.vector(NMAT)[c]-mat,gamma)),1,sum,na.rm=T))
+  pprior=dunif(p,0,1,log=T)
+  lamprior=dgamma(lam,shape=1,scale=100,log=T)
+  omegaprior=dunif(omega,0,1,log=T)
+  gammaprior= dgamma(gamma,shape=1,scale=100,log=T)
+  sumll = sum(singlelikelihoods,Npriort1,Npriort2T,pprior,lamprior,omegaprior,gammaprior)
+  return(sumll)
+}
+
+funcList=list()
+for(y in 1:R){
+  funcList[[y]]="prop_sites"
+}
+funcList[[51]]= "prop_p"
+funcList[[52]]="prop_lam"
+funcList[[53]]="prop_omega"
+funcList[[54]]="prop_gamma"
+
+prop_sites  <- function(param,j){return(round(rtnorm(n=S,param[(((j-1)*S)+1):((((j-1)*S)+1)+S-1)],sd=.5,lower=n.it[j,])))}
+prop_p = function(param,j){return(rtnorm(1,param[((R*S)+1)],.2,lower=0,upper=1))}
+prop_lam = function(param,j){return(rtnorm(1,param[((R*S)+2)],.05,lower=0))}
+prop_omega = function(param,j){return(rtnorm(1,param[((R*S)+3)],.2,lower=0,upper=1))}
+prop_gamma = function(param,j){return(rtnorm(1,param[((R*S)+4)],.05,lower=0))}
+
+proposalfunction <- function(param,j){
+  match.fun(funcList[[j]])(param,j)
+}
+  
+  
+run_MH <- function(startvalue,j){
+  stop=0
+  repeat{
+    proposal = proposalfunction(startvalue)
+    
+    probab = exp(posterior(proptest) - posterior(startvalue))
+    stop=ifelse(runif(1) < probab,1,0)
+    if (stop>0) break
+  }
+  return(proptest)
+}
+
+gibbs <- function(startvalue,iterations){
+  chain = array(dim = c(iterations+1,(R*S)+4))
+  chain[1,] = startvalue
+  for(i in 2:iterations){
+    print(i)
+    chain[i,]=chain[i-1,]
+    for(j in 1:(R+4)){ # i is # of Params
+      if(j %in% 1:R){chain[i,(((j-1)*S)+1):((((j-1)*S)+1)+S-1)]=run_MH(chain[i,],j)[(((j-1)*S)+1):((((j-1)*S)+1)+S-1)]}
+      else{chain[i,(j-R+(R*S))]=run_MH(chain[i,],j)[(j-R+(R*S))]}
+    }
+  }
+  return(chain)
+}
+
+
+out=(gibbs(start,6))
+qplot(100:500,out[100:500,304],geom="line")
+apply(out[300:500,],2,mean)
+apply(out[300:500,],2,quantile,c(.025,.975))
+sum(apply(out[200:500,],2,mean)[1:50])
+out[500:1000,1]
+
+? match.fun
+fun1=function(x,y){x+1+y}
+match.fun(as.function(cat("fun",j,sep="")))(2)
+match.fun(funcList[[1]])(2,1)
+
+funcList <- list("fun1")
