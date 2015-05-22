@@ -38,6 +38,26 @@ b <- a[-seq(S, length(a), 6)]
 c <- a[-seq(1, length(a), 6)]
 #####
 
+funcList2=list()
+for(y in 1:R){
+  funcList2[[y]]="sites"
+}
+funcList2[[51]]= "prior_p"
+funcList2[[52]]="prior_lam"
+funcList2[[53]]="prior_omega"
+funcList2[[54]]="prior_gamma"
+
+sites <- function(param,j){
+  dbinom(n.it[j,], param[(((j-1)*S)+1):((((j-1)*S)+1)+S-1)], param[(R*S)+1],log=T)
+  dpois(param[j],param[j+2],log=T)
+  NMAT2=rep(param[(((j-1)*S)+1):((((j-1)*S)+1)+S-1)],each=2)
+  minl=apply(matrix(NMAT2[2:((S*2)-1)],ncol=2,nrow=(S-1),byrow=TRUE),1,min)
+  dat=mapply(fn,minl,SIMPLIFY=FALSE)
+  max.len <- max(sapply(dat, length))
+  corrected.list <- lapply(dat, function(x) {c(x, rep(NA, max.len - length(x)))})
+  mat <- do.call(rbind, corrected.list)
+  Npriort2T=log(apply((dbinom(mat,param[(((j-1)*S)+1):((((j-1)*S)+1)+S-2)],param[(R*S)+3])*dpois(param[(((j-1)*S)+2):((((j-1)*S)+1)+S-1)]-mat,param[(R*S)+4])),1,sum,na.rm=T))
+}
 
 
 posterior <- function(param){
@@ -49,6 +69,7 @@ posterior <- function(param){
   singlelikelihoods = dbinom(as.vector(t(n.it)), N, p,log=T)
   
   Npriort1=dpois(param[seq(1,R*S,by=6)],lam,log=T)
+  
   NMAT=matrix(param[1:(R*S)],nrow=S,ncol=R)
   NMAT2=rep(as.vector(NMAT),each=2)
   minl=apply(matrix(NMAT2[2:599],ncol=2,nrow=299,byrow=TRUE),1,min)
@@ -57,6 +78,7 @@ posterior <- function(param){
   corrected.list <- lapply(dat, function(x) {c(x, rep(NA, max.len - length(x)))})
   mat <- do.call(rbind, corrected.list)
   Npriort2T=log(apply((dbinom(mat,as.vector(NMAT)[b],omega)*dpois(as.vector(NMAT)[c]-mat,gamma)),1,sum,na.rm=T))
+  
   pprior=dunif(p,0,1,log=T)
   lamprior=dgamma(lam,shape=1,scale=100,log=T)
   omegaprior=dunif(omega,0,1,log=T)
@@ -83,13 +105,13 @@ prop_gamma = function(param,j){return(rtnorm(1,param[((R*S)+4)],.05,lower=0))}
 proposalfunction <- function(param,j){
   match.fun(funcList[[j]])(param,j)
 }
-  
-  
+
+
 run_MH <- function(startvalue,j){
   stop=0
   llchain=posterior(startvalue)
   repeat{
-    proposal = proposalfunction(startvalue)
+    proposal = proposalfunction(startvalue,j)
     
     probab = exp(posterior(proptest) - posterior(startvalue))
     stop=ifelse(runif(1) < probab,1,0)
@@ -126,3 +148,5 @@ match.fun(as.function(cat("fun",j,sep="")))(2)
 match.fun(funcList[[1]])(2,1)
 
 funcList <- list("fun1")
+
+
