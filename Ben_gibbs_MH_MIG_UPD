@@ -87,6 +87,7 @@ proposalfunction <- function(param,j){
   
 run_MH <- function(startvalue,j){
   stop=0
+  llchain=posterior(startvalue)
   repeat{
     proposal = proposalfunction(startvalue)
     
