@@ -35,10 +35,10 @@ start=c(as.vector(t(n.it)),.5,1,.6,1)
 fn=function(y){0:y}
 llinit=rep(0,54)
 for(j in 1:R){
-  llinit[j]=match.fun(funcList2[[j]])(startvalue[(((j-1)*S)+1):((((j-1)*S)+1)+S-1)],j,startvalue)
+  llinit[j]=match.fun(funcList2[[j]])(start[(((j-1)*S)+1):((((j-1)*S)+1)+S-1)],j,start)
 }
 for(j in (R+1):(R+4)){
-  llinit[j]=match.fun(funcList2[[j]])(startvalue[(j-R+(R*S))],j,startvalue)
+  llinit[j]=match.fun(funcList2[[j]])(start[(j-R+(R*S))],j,start)
 }
 #####
 
@@ -96,9 +96,11 @@ run_MH <- function(startvalue,j,ll){
   stop=0
   repeat{
     proptest = proposalfunction(startvalue,j) 
+    print(c(proptest,j))
     newll=ll
     newll[j]=posterior(proptest,j,startvalue)
     probab = exp(sum(newll) - sum(ll))
+    print(c(sum(newll),sum(ll),sum(newll) - sum(ll)))
     stop=ifelse(runif(1) < probab,1,0)
     if (stop>0) break
   }
@@ -110,7 +112,6 @@ gibbs <- function(startvalue,iterations){
   chain[1,] = startvalue
   currentll=llinit
   for(i in 2:iterations){
-    print(i)
     chain[i,]=chain[i-1,]
     for(j in 1:(R+4)){ # i is # of Params
       if(j %in% 1:R){
