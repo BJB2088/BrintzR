@@ -33,9 +33,10 @@ R=dim(n.it)[1]
 S=dim(n.it)[2]
 start=c(as.vector(t(n.it)),.5,1,.6,1)
 fn=function(y){0:y}
-a <- 1:(R*S)
-b <- a[-seq(S, length(a), 6)]
-c <- a[-seq(1, length(a), 6)]
+llinit=rep(0,54)
+for(j in 1:54){
+  llinit[j]=match.fun(funcList2[[j]])(startvalue,j)
+}
 #####
 
 funcList2=list()
@@ -47,44 +48,25 @@ funcList2[[52]]="prior_lam"
 funcList2[[53]]="prior_omega"
 funcList2[[54]]="prior_gamma"
 
-sites <- function(param,j){
-  dbinom(n.it[j,], param[(((j-1)*S)+1):((((j-1)*S)+1)+S-1)], param[(R*S)+1],log=T)
-  dpois(param[j],param[j+2],log=T)
-  NMAT2=rep(param[(((j-1)*S)+1):((((j-1)*S)+1)+S-1)],each=2)
+sites <- function(param,j,startvalue){
+  lls=dbinom(n.it[j,], param, startvalue[(R*S)+1],log=T)
+  Npriort1=dpois(param[1],startvalue[R*S+2],log=T)
+  NMAT2=rep(param,each=2)
   minl=apply(matrix(NMAT2[2:((S*2)-1)],ncol=2,nrow=(S-1),byrow=TRUE),1,min)
   dat=mapply(fn,minl,SIMPLIFY=FALSE)
   max.len <- max(sapply(dat, length))
   corrected.list <- lapply(dat, function(x) {c(x, rep(NA, max.len - length(x)))})
   mat <- do.call(rbind, corrected.list)
-  Npriort2T=log(apply((dbinom(mat,param[(((j-1)*S)+1):((((j-1)*S)+1)+S-2)],param[(R*S)+3])*dpois(param[(((j-1)*S)+2):((((j-1)*S)+1)+S-1)]-mat,param[(R*S)+4])),1,sum,na.rm=T))
+  Npriort2T=log(apply((dbinom(mat,param[1:(S-1)],startvalue[(R*S)+3])*dpois(param[2:S]-mat,startvalue[(R*S)+4])),1,sum,na.rm=T))
+  return(sum(lls,Npriort1,Npriort2T))
 }
+prior_p <- function(param,j,startvalue){return(dunif(param,0,1,log=T))}
+prior_lam <- function(param,j,startvalue){return(dgamma(param,shape=1,scale=100,log=T))}
+prior_omega <- function(param,j,startvalue){return(dunif(param,0,1,log=T))}
+prior_gamma <- function(param,j,startvalue){return(dgamma(param,shape=1,scale=100,log=T))}
 
-
-posterior <- function(param){
-  N = param[1:(R*S)]
-  p = param[(R*S)+1]
-  lam = param[(R*S)+2]
-  omega = param[(R*S)+3]
-  gamma=param[(R*S)+4]
-  singlelikelihoods = dbinom(as.vector(t(n.it)), N, p,log=T)
-  
-  Npriort1=dpois(param[seq(1,R*S,by=6)],lam,log=T)
-  
-  NMAT=matrix(param[1:(R*S)],nrow=S,ncol=R)
-  NMAT2=rep(as.vector(NMAT),each=2)
-  minl=apply(matrix(NMAT2[2:599],ncol=2,nrow=299,byrow=TRUE),1,min)
-  dat=mapply(fn,minl[b],SIMPLIFY=FALSE)
-  max.len <- max(sapply(dat, length))
-  corrected.list <- lapply(dat, function(x) {c(x, rep(NA, max.len - length(x)))})
-  mat <- do.call(rbind, corrected.list)
-  Npriort2T=log(apply((dbinom(mat,as.vector(NMAT)[b],omega)*dpois(as.vector(NMAT)[c]-mat,gamma)),1,sum,na.rm=T))
-  
-  pprior=dunif(p,0,1,log=T)
-  lamprior=dgamma(lam,shape=1,scale=100,log=T)
-  omegaprior=dunif(omega,0,1,log=T)
-  gammaprior= dgamma(gamma,shape=1,scale=100,log=T)
-  sumll = sum(singlelikelihoods,Npriort1,Npriort2T,pprior,lamprior,omegaprior,gammaprior)
-  return(sumll)
+posterior <- function(param,j,startvalue){
+  match.fun(funcList2[[j]])(param,j,startvalue)
 }
 
 funcList=list()
@@ -107,32 +89,35 @@ proposalfunction <- function(param,j){
 }
 
 
-run_MH <- function(startvalue,j){
+run_MH <- function(startvalue,j,ll){
   stop=0
-  llchain=posterior(startvalue)
   repeat{
-    proposal = proposalfunction(startvalue,j)
-    
-    probab = exp(posterior(proptest) - posterior(startvalue))
+    proptest = proposalfunction(startvalue,j) 
+    newll=ll
+    newll[j]=posterior(proptest,j,startvalue)
+    probab = exp(sum(newll) - sum(ll))
     stop=ifelse(runif(1) < probab,1,0)
     if (stop>0) break
   }
-  return(proptest)
+  return(list(proptest,newll))
 }
 
 gibbs <- function(startvalue,iterations){
   chain = array(dim = c(iterations+1,(R*S)+4))
   chain[1,] = startvalue
+  currentll=llinit
   for(i in 2:iterations){
     print(i)
     chain[i,]=chain[i-1,]
     for(j in 1:(R+4)){ # i is # of Params
-      if(j %in% 1:R){chain[i,(((j-1)*S)+1):((((j-1)*S)+1)+S-1)]=run_MH(chain[i,],j)[(((j-1)*S)+1):((((j-1)*S)+1)+S-1)]}
-      else{chain[i,(j-R+(R*S))]=run_MH(chain[i,],j)[(j-R+(R*S))]}
+      if(j %in% 1:R){chain[i,(((j-1)*S)+1):((((j-1)*S)+1)+S-1)]=run_MH(chain[i,],j,currentll)}
+      else{chain[i,(j-R+(R*S))]=run_MH(chain[i,],j,currentll)}
+      currentll=run_MH[[2]]
     }
   }
   return(chain)
 }
+
 
 
 out=(gibbs(start,6))
