@@ -34,8 +34,11 @@ S=dim(n.it)[2]
 start=c(as.vector(t(n.it)),.5,1,.6,1)
 fn=function(y){0:y}
 llinit=rep(0,54)
-for(j in 1:54){
-  llinit[j]=match.fun(funcList2[[j]])(startvalue,j)
+for(j in 1:R){
+  llinit[j]=match.fun(funcList2[[j]])(startvalue[(((j-1)*S)+1):((((j-1)*S)+1)+S-1)],j,startvalue)
+}
+for(j in (R+1):(R+4)){
+  llinit[j]=match.fun(funcList2[[j]])(startvalue[(j-R+(R*S))],j,startvalue)
 }
 #####
 
@@ -110,17 +113,21 @@ gibbs <- function(startvalue,iterations){
     print(i)
     chain[i,]=chain[i-1,]
     for(j in 1:(R+4)){ # i is # of Params
-      if(j %in% 1:R){chain[i,(((j-1)*S)+1):((((j-1)*S)+1)+S-1)]=run_MH(chain[i,],j,currentll)}
-      else{chain[i,(j-R+(R*S))]=run_MH(chain[i,],j,currentll)}
-      currentll=run_MH[[2]]
+      if(j %in% 1:R){
+        put=run_MH(chain[i,],j,currentll)
+        chain[i,(((j-1)*S)+1):((((j-1)*S)+1)+S-1)]=put[[1]]
+      }
+      else{
+        put=run_MH(chain[i,],j,currentll)
+        chain[i,(j-R+(R*S))]=put[[1]]}
+      currentll=put[[2]]
     }
   }
   return(chain)
 }
 
 
-
-out=(gibbs(start,6))
+out=gibbs(start,2)
 qplot(100:500,out[100:500,304],geom="line")
 apply(out[300:500,],2,mean)
 apply(out[300:500,],2,quantile,c(.025,.975))
