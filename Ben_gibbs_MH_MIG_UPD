@@ -82,10 +82,10 @@ funcList[[53]]="prop_omega"
 funcList[[54]]="prop_gamma"
 
 prop_sites  <- function(param,j){return(round(rtnorm(n=S,param[(((j-1)*S)+1):((((j-1)*S)+1)+S-1)],sd=.5,lower=n.it[j,])))}
-prop_p = function(param,j){return(rtnorm(1,param[((R*S)+1)],.2,lower=0,upper=1))}
-prop_lam = function(param,j){return(rtnorm(1,param[((R*S)+2)],.05,lower=0))}
-prop_omega = function(param,j){return(rtnorm(1,param[((R*S)+3)],.2,lower=0,upper=1))}
-prop_gamma = function(param,j){return(rtnorm(1,param[((R*S)+4)],.05,lower=0))}
+prop_p = function(param,j){return(rtnorm(1,param[((R*S)+1)],.01,lower=0,upper=1))}
+prop_lam = function(param,j){return(rtnorm(1,param[((R*S)+2)],.1,lower=0))}
+prop_omega = function(param,j){return(rtnorm(1,param[((R*S)+3)],.01,lower=0,upper=1))}
+prop_gamma = function(param,j){return(rtnorm(1,param[((R*S)+4)],.1,lower=0))}
 
 proposalfunction <- function(param,j){
   match.fun(funcList[[j]])(param,j)
