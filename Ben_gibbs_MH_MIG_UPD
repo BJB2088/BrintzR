@@ -13,8 +13,8 @@ x=rpois(50,3)
 # Initial Matrix
 mat=matrix(rep(x,6),nrow=50,ncol=6)
 v=dim(mat)[2]
-omega = 1
-gamma = 0
+omega = .8
+gamma = 1
 # Survive and Gain
 nmat=mat
 for (i in 2:v){
