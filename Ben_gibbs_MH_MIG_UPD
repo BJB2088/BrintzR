@@ -1,4 +1,4 @@
-library(msm)
+library(msm) # For truncated normals 
 library(mc2d)
 # Simulating Data
 # Royle's Model
@@ -29,11 +29,11 @@ n.it=t(birds)[8:57,]
 #######
 # Initial Values
 n.it=n
-R=dim(n.it)[1]
-S=dim(n.it)[2]
+R=dim(n.it)[1] # of sites
+S=dim(n.it)[2] # of visits 
 start=c(as.vector(t(n.it)),.5,1,.6,1)
 fn=function(y){0:y}
-llinit=rep(0,54)
+llinit=rep(0,54) # Create initial likelihood, need to run likelihood functions first...
 for(j in 1:R){
   llinit[j]=match.fun(funcList2[[j]])(start[(((j-1)*S)+1):((((j-1)*S)+1)+S-1)],j,start)
 }
@@ -51,7 +51,7 @@ funcList2[[52]]="prior_lam"
 funcList2[[53]]="prior_omega"
 funcList2[[54]]="prior_gamma"
 
-sites <- function(param,j,startvalue){
+sites <- function(param,j,startvalue){ # prior likelihoods for sites and visits
   lls=dbinom(n.it[j,], param, startvalue[(R*S)+1],log=T)
   Npriort1=dpois(param[1],startvalue[R*S+2],log=T)
   NMAT2=rep(param,each=2)
@@ -63,7 +63,7 @@ sites <- function(param,j,startvalue){
   Npriort2T=log(apply((dbinom(mat,param[1:(S-1)],startvalue[(R*S)+3])*dpois(param[2:S]-mat,startvalue[(R*S)+4])),1,sum,na.rm=T))
   return(sum(lls,Npriort1,Npriort2T))
 }
-prior_p <- function(param,j,startvalue){return(dunif(param,0,1,log=T))}
+prior_p <- function(param,j,startvalue){return(dunif(param,0,1,log=T))} # priors for other parameters 
 prior_lam <- function(param,j,startvalue){return(dgamma(param,shape=1,scale=100,log=T))}
 prior_omega <- function(param,j,startvalue){return(dunif(param,0,1,log=T))}
 prior_gamma <- function(param,j,startvalue){return(dgamma(param,shape=1,scale=100,log=T))}
@@ -80,7 +80,7 @@ funcList[[51]]= "prop_p"
 funcList[[52]]="prop_lam"
 funcList[[53]]="prop_omega"
 funcList[[54]]="prop_gamma"
-
+# Proposal functions
 prop_sites  <- function(param,j){return(round(rtnorm(n=S,param[(((j-1)*S)+1):((((j-1)*S)+1)+S-1)],sd=.5,lower=n.it[j,])))}
 prop_p = function(param,j){return(rtnorm(1,param[((R*S)+1)],.01,lower=.1,upper=1))}
 prop_lam = function(param,j){return(rtnorm(1,param[((R*S)+2)],.01,lower=0))}
@@ -94,7 +94,7 @@ proposalfunction <- function(param,j){
 
 run_MH <- function(startvalue,j,ll){
   stop=0
-  repeat{
+  repeat{ # repeat until value is accepted by Metropolis-Hastings 
     proptest = proposalfunction(startvalue,j) 
     #print(c(proptest,j))
     newll=ll
@@ -114,17 +114,15 @@ gibbs <- function(startvalue,iterations){
   for(i in 2:iterations){
     print(i)
     chain[i,]=chain[i-1,]
-    print(chain[i-1,301:304])
-    print(chain[i-2,301:304])
     for(j in 1:(R+4)){ # i is # of Params
       if(j %in% 1:R){
-        put=run_MH(chain[i,],j,currentll)
-        chain[i,(((j-1)*S)+1):((((j-1)*S)+1)+S-1)]=put[[1]]
+        put=run_MH(chain[i,],j,currentll) # get new values and new likelihood for site parameters 
+        chain[i,(((j-1)*S)+1):((((j-1)*S)+1)+S-1)]=put[[1]] # update chain 
       }
       else{
-        put=run_MH(chain[i,],j,currentll)
-        chain[i,(j-R+(R*S))]=put[[1]]}
-      currentll=put[[2]]
+        put=run_MH(chain[i,],j,currentll) # get new values and new likelihood for other parameters 
+        chain[i,(j-R+(R*S))]=put[[1]]} # update chain 
+      currentll=put[[2]] # Update Likelihood 
     }
   }
   return(chain)
@@ -132,18 +130,5 @@ gibbs <- function(startvalue,iterations){
 
 
 out=gibbs(start,10000)
-qplot(1:10000,out[1:10000,301],geom="line")
-qplot(100:500,out[100:500,304],geom="line")
-apply(out[300:500,],2,mean)
-apply(out[300:500,],2,quantile,c(.025,.975))
-sum(apply(out[200:500,],2,mean)[1:50])
-out[500:1000,1]
-
-? match.fun
-fun1=function(x,y){x+1+y}
-match.fun(as.function(cat("fun",j,sep="")))(2)
-match.fun(funcList[[1]])(2,1)
-
-funcList <- list("fun1")
 
 
