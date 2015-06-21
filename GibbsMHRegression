@@ -1,0 +1,88 @@
+x1=sample(1:50,20)
+x2=sample(1:50,20)
+y=30+20*x1+5*x2+rnorm(20,0,5)
+mod=(lm(y~x1+x2))
+summary(mod)
+anova(mod)
+
+startvalue=c(5,5,5,1)
+
+
+
+#####
+
+funcList2=list()
+
+funcList2[[1]]= "prior_b0"
+funcList2[[2]]="prior_b1"
+funcList2[[3]]="prior_b2"
+funcList2[[4]]="prior_sigma"
+
+
+prior_b0 <- function(param,j,startvalue){return(dnorm(param,0,100,log=T)+dnorm(startvalue[2],0,100,log=T)+dnorm(startvalue[3],0,100,log=T)+dgamma(startvalue[4],shape=1,scale=100,log=T)+sum(dnorm(y,param+startvalue[2]*x1+startvalue[3]*x2,startvalue[4],log=T)))}
+prior_b1 <- function(param,j,startvalue){return(dnorm(param,0,100,log=T)+dnorm(startvalue[1],0,100,log=T)+dnorm(startvalue[3],0,100,log=T)+dgamma(startvalue[4],shape=1,scale=100,log=T)+sum(dnorm(y,startvalue[1]+param*x1+startvalue[3]*x2,startvalue[4],log=T)))}
+prior_b2 <- function(param,j,startvalue){return(dnorm(param,0,100,log=T)+dnorm(startvalue[1],0,100,log=T)+dnorm(startvalue[2],0,100,log=T)+dgamma(startvalue[4],shape=1,scale=100,log=T)+sum(dnorm(y,startvalue[1]+startvalue[2]*x1+param*x2,startvalue[4],log=T)))}
+prior_sigma <- function(param,j,startvalue){return(dnorm(startvalue[1],0,100,log=T)+dnorm(startvalue[2],0,100,log=T)+dnorm(startvalue[3],0,100,log=T)+dgamma(param,shape=1,scale=100,log=T)+sum(dnorm(y,startvalue[1]+startvalue[2]*x1+startvalue[3]*x2,param,log=T)))}
+
+llinit=prior_b0(5,1,startvalue)
+
+posterior <- function(param,j,startvalue){
+  match.fun(funcList2[[j]])(param,j,startvalue)
+}
+
+funcList=list()
+funcList[[1]]= "prop_b0"
+funcList[[2]]="prop_b1"
+funcList[[3]]="prop_b2"
+funcList[[4]]="prop_sigma"
+
+prop_b0  <- function(param,j){return(rnorm(1,param[j],sd=.1))}
+prop_b1 = function(param,j){return(rnorm(1,param[j],sd=.1))}
+prop_b2 = function(param,j){return(rnorm(1,param[j],sd=.1))}
+prop_sigma = function(param,j){return(rnorm(1,param[j],sd=.1))}
+
+
+proposalfunction <- function(param,j){
+  match.fun(funcList[[j]])(param,j)
+}
+
+run_MH <- function(startvalue,j,ll){
+  stop=0
+  newll=ll
+  count=0
+  repeat{
+    count=count+1
+    proptest = proposalfunction(startvalue,j)     
+    newll=posterior(proptest,j,startvalue)
+    probab = exp(sum(newll) - sum(ll))
+    stop=ifelse(runif(1) < probab,1,0)
+    if (stop>0) break
+  }
+  return(list(proptest,newll))
+}
+
+gibbs <- function(startvalue,iterations){
+  chain = array(dim = c(iterations+1,4))
+  chain[1,] = startvalue
+  currentll=llinit
+  for(i in 2:iterations){
+    chain[i,]=chain[i-1,]
+    print(i)
+    for(j in 1:4){ # i is # of Params
+      # print(c(chain[i,301],chain[i,302],chain[i,303],chain[i,304])
+        put=run_MH(chain[i,],j,currentll)
+        chain[i,j]=put[[1]]
+        currentll=put[[2]]
+    }
+    }
+  return(chain)
+}
+
+
+out=gibbs(startvalue,100000)
+
+apply(out[70000:100000,],2,mean)
+qplot(1:4951,out[seq(1000,100000,by=20),1],geom="line")
+length(seq(1000,100000,by=20))
+
+qplot(rnorm(10000,0,10000))
